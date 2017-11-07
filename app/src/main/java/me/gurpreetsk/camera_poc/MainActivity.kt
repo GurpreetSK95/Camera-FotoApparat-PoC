@@ -1,5 +1,6 @@
 package me.gurpreetsk.camera_poc
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
 import android.support.v7.app.AppCompatActivity
@@ -15,6 +16,7 @@ import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.result.PhotoResult
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.uiThread
 import java.io.File
 import java.util.*
 
@@ -51,38 +53,45 @@ class MainActivity : AppCompatActivity() {
       directory.mkdirs()
       val imageName = "image" + Random().nextInt(100000) + ".png"
       val location = File(directory, imageName)
-      clickedImage.saveToFile(location)
-      Log.i("MainActivity", "Saved: " + location)
+      try {
+        clickedImage.saveToFile(location)
+        Log.i("MainActivity", "Saved: " + location)
+      } catch (e: Exception) {
+        e.printStackTrace()
+      }
+      uiThread {
+        startActivity(Intent(this@MainActivity, ViewPhotoActivity::class.java))
+      }
     }
   }
 
   private fun toggleFlash() {
 //    fotoapparat.updateParameters(
-//      UpdateRequest.builder()
-//          .flash(if () torch() else off())
-//          .build()
-//    )
+//        UpdateRequest.builder()
+//            .flash(if (FlashSelectors.off()) torch() else off())
+//            .build())
   }
 
   private fun setupCamera(): Fotoapparat =
       Fotoapparat.with(MainActivity@ this)
           .into(cameraView)
-          .previewScaleType(ScaleType.CENTER_INSIDE)
+          .previewScaleType(ScaleType.CENTER_CROP)
           .photoSize(biggestSize())
           .lensPosition(back())
           .focusMode(
-              firstAvailable(  // (optional) use the first focus mode which is supported by device
+              firstAvailable(         // (optional) use the first focus mode which is supported by device
                   continuousFocus(),
                   autoFocus(),        // in case if continuous focus is not available on device, auto focus will be used
                   fixed()             // if even auto focus is not available - fixed focus mode will be used
               )
           )
-          .flash(firstAvailable(      // (optional) similar to how it is done for focus mode, this time for flash
-              autoRedEye(),
-              autoFlash(),
-              torch()
-          ))
-//        .frameProcessor(myFrameProcessor)   // (optional) receives each frame from preview stream
+          .flash(
+              firstAvailable(      // (optional) similar to how it is done for focus mode, this time for flash
+                  autoRedEye(),
+                  autoFlash(),
+                  torch()
+              )
+          )
           .logger(logcat())
           .build()
 
