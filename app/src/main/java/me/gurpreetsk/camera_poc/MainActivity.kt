@@ -1,7 +1,9 @@
 package me.gurpreetsk.camera_poc
 
 import android.os.Bundle
+import android.os.Environment
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.log.Loggers.logcat
 import io.fotoapparat.parameter.ScaleType
@@ -12,6 +14,9 @@ import io.fotoapparat.parameter.selector.Selectors.firstAvailable
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.result.PhotoResult
 import kotlinx.android.synthetic.main.activity_main.*
+import org.jetbrains.anko.doAsync
+import java.io.File
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,7 +45,15 @@ class MainActivity : AppCompatActivity() {
   private fun takeImage() {
     val clickedImage: PhotoResult = fotoapparat.takePicture()
 
-//    clickedImage.saveToFile(file)
+    doAsync {
+      val root = Environment.getExternalStorageDirectory().absolutePath + "/camera-poc"
+      val directory = File(root)
+      directory.mkdirs()
+      val imageName = "image" + Random().nextInt(100000) + ".png"
+      val location = File(directory, imageName)
+      clickedImage.saveToFile(location)
+      Log.i("MainActivity", "Saved: " + location)
+    }
   }
 
   private fun toggleFlash() {
